@@ -2,7 +2,7 @@ const { ApolloServer, gql } = require('apollo-server');
 
 const typeDefs = gql`
   type Query {
-    me: User
+    me2: User
   }
 
   type User {
@@ -13,8 +13,8 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
-    me() {
-      return { id: "1", username: "@ava" }
+    me2() {
+      return { id: "2", username: "@gsm" }
     }
   }
 };
