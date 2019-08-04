@@ -15,13 +15,21 @@ const typeDefs = gql`
   }
 `;
 
+const authenticated = next => (root, args, context, info) => {
+    if (!context.currentUser) {
+        throw new Error(`Unauthenticated!`);
+    }
+
+    return next(root, args, context, info);
+};
+
 const resolvers = {
   Query: {
-    me: (root, args, context) => context.currentUser,
-    user(parent, args) {
+    me: authenticated((root, args, context) => context.currentUser),
+    user: authenticated((parent, args) => {
       const { name } = args;
       return users.find((user) => user.name === name);
-    },
+    }),
     users() {
       return users;
     }
