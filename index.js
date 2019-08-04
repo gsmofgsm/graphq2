@@ -1,10 +1,11 @@
 const { ApolloServer, gql } = require('apollo-server');
+const HEADER_NAME = 'authorization';
 
 const typeDefs = gql`
   type Query {
     users: [User]
     user(name: String): User
-    me2: User
+    me: User
   }
 
   type User {
@@ -16,9 +17,7 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
-    me2() {
-      return { id: "2", username: "@gsm" }
-    },
+    me: (root, args, context) => context.currentUser,
     user(parent, args) {
       const { name } = args;
       return users.find((user) => user.name === name);
@@ -27,6 +26,23 @@ const resolvers = {
       return users;
     }
   }
+};
+
+const tradeTokenForUser = async (token) => {
+    // Here, use the `token` argument, check it's validity, and return
+    // the user only if the token is valid.
+    // You can also use external auth libraries, such as jsaccounts / passport, and
+    // trigger it's logic from here.
+
+    if(token === 'admin') {
+        return users[3];
+    }
+    if(token === 'author1') {
+        return users[0];
+    }
+    if(token === 'author2') {
+        return users[1];
+    }
 };
 
 const users = [
@@ -49,8 +65,27 @@ const users = [
 ]
 
 const server = new ApolloServer({
-  typeDefs,
-  resolvers,
+    typeDefs,
+    resolvers,
+    context: async ( {req} ) => {
+        let authToken = null;
+        let currentUser = null;
+
+        try {
+            authToken = req.headers[HEADER_NAME];
+
+            if (authToken) {
+                currentUser = await tradeTokenForUser(authToken);
+            }
+        } catch (e) {
+            console.warn(`Unable to authenticate using auth token: ${authToken}`);
+        }
+
+        return {
+            authToken,
+            currentUser,
+        };
+    }
 });
 
 server.listen(4002).then(({ url }) => {
