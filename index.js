@@ -23,13 +23,24 @@ const authenticated = next => (root, args, context, info) => {
     return next(root, args, context, info);
 };
 
+const validateRole = role => next => (root, args, context, info) => {
+    if (context.currentUser.role !== role) {
+        throw new Error(`Unauthorized!`);
+    }
+
+    return next(root, args, context, info);
+};
+
 const resolvers = {
   Query: {
     me: authenticated((root, args, context) => context.currentUser),
-    user: authenticated((parent, args) => {
-      const { name } = args;
-      return users.find((user) => user.name === name);
-    }),
+    user: authenticated(
+        validateRole('EDITOR')(
+          (parent, args) => {
+            const { name } = args;
+            return users.find((user) => user.name === name);
+          }
+    )),
     users() {
       return users;
     }
@@ -56,11 +67,13 @@ const tradeTokenForUser = async (token) => {
 const users = [
   {
     name: 'J.K. Rowling',
-    username: '@J.K. Rowling'
+    username: '@J.K. Rowling',
+    role: "EDITOR"
   },
   {
     name: 'Michael Crichton',
-    username: '@Michael Crichton'
+    username: '@Michael Crichton',
+    role: "EDITOR"
   },
   {
     name: 'tom',
@@ -68,7 +81,8 @@ const users = [
   },
   {
     name: 'jerry',
-    username: '@jerry'
+    username: '@jerry',
+    role: "ADMIN"
   },
 ]
 
